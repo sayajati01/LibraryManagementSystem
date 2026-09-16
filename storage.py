@@ -55,6 +55,52 @@ def create_tables_books(connection) -> None:
         )
     """)
 
+def create_tables_categories(connection) -> None:
+    cursor = connection.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS categories (
+            category_id TEXT PRIMARY KEY,
+            category_name TEXT NOT NULL UNIQUE
+        )
+    """)
+
+def create_tables_book_categories(connection) -> None:
+    cursor = connection.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS book_categories (
+            book_id TEXT NOT NULL,
+            category_id TEXT NOT NULL,
+
+            PRIMARY KEY (book_id, category_id),
+
+            FOREIGN KEY (book_id)
+                REFERENCES books(book_id),
+            
+            FOREIGN KEY( category_id)
+                REFERENCES categories(category_id)        
+        
+        )
+    """)
+    
+
+def create_tables_book_authors(connection) -> None:
+    cursor = connection.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS book_authors (
+            book_id TEXT NOT NULL,
+            author_id TEXT NOT NULL,
+
+            PRIMARY KEY (book_id, author_id),
+
+            FOREIGN KEY (book_id)
+                REFERENCES books(books_id),
+            
+            FOREIGN KEY (author_id)
+                REFERENCES authors(author_id)
+        )
+    """)
+    
+
 def create_tables_borrowing(connection) -> None:
     cursor = connection.cursor()
     cursor.execute("""
@@ -78,6 +124,9 @@ def create_tables(connection):
     create_tables_author(connection)
     create_tables_member(connection)
     create_tables_books(connection)
+    create_tables_categories(connection)
+    create_tables_book_authors(connection)
+    create_tables_book_categories(connection)
     create_tables_borrowing(connection)
 
     connection.commit()
@@ -126,7 +175,7 @@ def check_book_exists_in_database(book_id: str) -> bool:
 def insert_publisher_to_database(connection, publisher : Publisher) -> None:
     cursor = connection.cursor()
     cursor.execute("""
-        INSER INTO publishers (
+        INSERT INTO publishers (
             publisher_id, 
             publisher_name,
             publisher_city
@@ -135,10 +184,11 @@ def insert_publisher_to_database(connection, publisher : Publisher) -> None:
     """, (
         publisher.publisher_id,
         publisher.publisher_name,
-        publisher.city
+        publisher.publisher_city
     ))
+    connection.commit()
 
-def get_publisher_from_database(connection, publisher_id : str) -> Publisher:
+def get_publisher_from_database(connection, publisher_id : str) -> Publisher | None:
     cursor = connection.cursor()
     cursor.execute("""
         SELECT publisher_id, publisher_name, publisher_city
@@ -149,6 +199,10 @@ def get_publisher_from_database(connection, publisher_id : str) -> Publisher:
     ))
 
     row = cursor.fetchone()
+
+    if row is None:
+        return None
+    
     publisher = Publisher(
         publisher_id=row[0],
         publisher_name=row[1],
@@ -167,7 +221,7 @@ def update_publisher_in_database(
     cursor.execute("""
         UPDATE publishers
         SET publisher_name = ?,
-            city = ?
+            publisher_city = ?
         WHERE publisher_id = ?
     """, (
         new_publisher_name,
@@ -178,8 +232,38 @@ def update_publisher_in_database(
     connection.commit()
     return cursor.rowcount > 0
 
-def delete_publisher_from_database():
-    return
+def delete_publisher_from_database(
+        connection,
+        publisher_id:str
+) -> bool:
+    cursor = connection.cursor()
+    cursor.execute("""
+        DELETE FROM publishers
+        WHERE publisher_id = ?
+    """, (
+        publisher_id,
+    ))
+    connection.commit()
+    return cursor.rowcount > 0
+
+def fetch_all_publishers_from_database(connection) -> list[Publisher]:
+    cursor = connection.cursor()
+    cursor.execute("""
+        SELECT publisher_id, publisher_name, publisher_city
+        FROM publishers
+    """)
+
+    rows = cursor.fetchall()
+    publishers = []
+
+    for row in rows:
+        publisher = Publisher(
+            publisher_id = row[0],
+            publisher_name = row[1],
+            publisher_city = row[2]
+        )
+        publishers.append(publisher)
+    return publishers
 
 # ===-===  ===-===  ===-===
 # 
@@ -196,9 +280,10 @@ def insert_author_to_database(connection, author : Author) -> None:
     """, (
         author.author_id , 
         author.author_name
-    ))    
+    ))
+    connection.commit()    
 
-def get_author_from_database(connection, author_id : str) -> Author:
+def get_author_from_database(connection, author_id : str) -> Author | None:
     cursor = connection.cursor()
     cursor.execute("""
         SELECT author_id, author_name
@@ -209,6 +294,9 @@ def get_author_from_database(connection, author_id : str) -> Author:
     ))
 
     row = cursor.fetchone()
+
+    if row is None :
+        return None
     
     author = Author(
         author_id=row[0],
@@ -235,8 +323,41 @@ def update_author_in_database(
     connection.commit()
     return cursor.rowcount > 0
 
-def delete_author_from_database():
-    return
+def delete_author_from_database(
+        connection,
+        author_id:str
+) -> bool:
+    cursor = connection.cursor()
+    cursor.execute("""
+        DELETE FROM authors
+        WHERE author_id = ?
+    """, (
+        author_id,
+    ))
+    connection.commit()
+    return cursor.rowcount > 0
+
+def fetch_all_authors_from_database(
+        connection
+) -> list[Author] :
+    cursor = connection.cursor()
+    cursor.execute("""
+        SELECT author_id, author_name
+        FROM authors
+    """)
+
+    rows = cursor.fetchall()
+    author_list = []
+
+    for row in rows :
+        author = Author(
+            author_id = row[0],
+            author_name = row[1]
+        )
+        author_list.append(author)
+
+    return author_list
+    
 
 
 # ===-===  ===-=== ===-===
@@ -258,8 +379,9 @@ def insert_member_to_database(connection, member:Member) -> None:
         member.member_name,
         member.member_email
     ))
+    connection.commit()
     
-def get_member_from_database(connection, member_id : str) -> Member:
+def get_member_from_database(connection, member_id : str) -> Member | None:
     cursor = connection.cursor()
     cursor.execute("""
         SELECT member_id, member_name, member_email
@@ -270,6 +392,10 @@ def get_member_from_database(connection, member_id : str) -> Member:
     ))
 
     row = cursor.fetchone()
+
+    if row is None:
+        return None
+
     member = Member(
         member_id=row[0],
         member_name=row[1],
@@ -287,8 +413,8 @@ def update_member_in_database(
     cursor = connection.cursor()
     cursor.execute("""
         UPDATE members
-        SET member.name = ?,
-            member.email = ?
+        SET member_name = ?,
+            member_email = ?
         WHERE member_id = ?
     """, (
         new_member_name,
@@ -299,8 +425,79 @@ def update_member_in_database(
     connection.commit()
     return cursor.rowcount > 0
 
-def delete_member_from_database():
-    return
+def delete_member_from_database(
+        connection,
+        member_id:str
+) -> bool:
+    cursor = connection.cursor()
+    cursor.execute("""
+        DELETE FROM members
+        WHERE member_id = ?
+    """, (
+        member_id,
+    ))
+    connection.commit()
+    return cursor.rowcount > 0
+
+def fetch_all_members_from_database(
+        connection
+) -> list[Member]:
+    cursor = connection.cursor()
+    cursor.execute("""
+        SELECT member_id, member_name, member_email
+        FROM members
+    """)
+
+    rows = cursor.fetchall()
+    members = []
+
+    for row in rows :
+        member = Member(
+            member_id=row[0],
+            member_name=row[1],
+            member_email=row[2]
+        )
+        members.append(member)
+
+    return members
+
+# -=-=- Category? =-=-=-=
+def check_category_input(
+        connection,
+        category_id
+        ) -> bool :
+    cursor = connection.cursor()
+    cursor.execute("""
+        SELECT category_id
+        FROM categories
+        WHERE category_id = ?
+    """, (
+        category_id,
+    ))
+
+    row = cursor.fetchone()
+    if row is None :
+        return False
+
+    return True
+
+def add_category_to_database (
+        connection,
+        category_id,
+        category_name
+)-> None :
+    cursor = connection.cursor()
+    cursor.execute("""
+        INSERT INTO categories (
+            category_id, category_name
+        )
+        VALUES (? , ?)
+
+    """,(
+        category_id,
+        category_name
+    ))
+    
 
 # === sql function ===
 def create_connection():

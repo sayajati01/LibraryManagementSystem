@@ -36,43 +36,10 @@ def statistic_menu():
     else:
         print("INVALID MENU")
 
-
-# =========================
-# AUTHOR MANAGEMENT
-# =========================
-def author_management_menu():
-    print("""
--------- AUTHOR MANAGEMENT MENU --------
-1. Add Author
-2. Update Author
-3. Delete Author
-4. View Author
-5. View All Authors
-0. Back
-""")
-
-    menu_choice = input("Input Menu (number): ").strip()
-
-    if menu_choice == "1":
-        add_author()
-    elif menu_choice == "2":
-        update_author()
-    elif menu_choice == "3":
-        delete_author()
-    elif menu_choice == "4":
-        view_author()
-    elif menu_choice == "5":
-        view_all_authors()
-    elif menu_choice == "0":
-        return
-    else:
-        print("INVALID MENU")
-
-
 # =========================
 # PUBLISHER MANAGEMENT
 # =========================
-def publisher_management_menu():
+def publisher_management_menu(connection):
     print("""
 -------- PUBLISHER MANAGEMENT MENU --------
 1. Add Publisher
@@ -86,20 +53,82 @@ def publisher_management_menu():
     menu_choice = input("Input Menu (number): ").strip()
 
     if menu_choice == "1":
-        add_publisher()
+        add_publisher(connection)
     elif menu_choice == "2":
-        update_publisher()
+        update_publisher(connection)
     elif menu_choice == "3":
-        delete_publisher()
+        delete_publisher(connection)
     elif menu_choice == "4":
-        view_publisher()
+        view_publisher(connection)
     elif menu_choice == "5":
-        view_all_publishers()
+        view_all_publishers(connection)
     elif menu_choice == "0":
         return
     else:
         print("INVALID MENU")
 
+# =========================
+# AUTHOR MANAGEMENT
+# =========================
+def author_management_menu(connection):
+    print("""
+-------- AUTHOR MANAGEMENT MENU --------
+1. Add Author
+2. Update Author
+3. Delete Author
+4. View Author
+5. View All Authors
+0. Back
+""")
+
+    menu_choice = input("Input Menu (number): ").strip()
+
+    if menu_choice == "1":
+        add_author(connection)
+    elif menu_choice == "2":
+        update_author(connection)
+    elif menu_choice == "3":
+        delete_author(connection)
+    elif menu_choice == "4":
+        view_author(connection)
+    elif menu_choice == "5":
+        view_all_authors(connection)
+    elif menu_choice == "0":
+        return
+    else:
+        print("INVALID MENU")
+
+
+# =========================
+# MEMBER MANAGEMENT
+# =========================
+def member_management_menu():
+    print("""
+-------- MEMBER MANAGEMENT MENU --------
+1. Add Member
+2. Update Member
+3. Delete Member
+4. View Member
+5. View All Members
+0. Back
+""")
+
+    menu_choice = input("Input Menu (number): ").strip()
+
+    if menu_choice == "1":
+        add_member()
+    elif menu_choice == "2":
+        update_member()
+    elif menu_choice == "3":
+        delete_member()
+    elif menu_choice == "4":
+        view_member()
+    elif menu_choice == "5":
+        view_all_members()
+    elif menu_choice == "0":
+        return
+    else:
+        print("INVALID MENU")
 
 # =========================
 # SEARCH
@@ -159,38 +188,6 @@ def borrowing_feature_menu():
         return_book()
     elif menu_choice == "3":
         get_member_borrowed_books()
-    elif menu_choice == "0":
-        return
-    else:
-        print("INVALID MENU")
-
-
-# =========================
-# MEMBER MANAGEMENT
-# =========================
-def member_management_menu():
-    print("""
--------- MEMBER MANAGEMENT MENU --------
-1. Add Member
-2. Update Member
-3. Delete Member
-4. View Member
-5. View All Members
-0. Back
-""")
-
-    menu_choice = input("Input Menu (number): ").strip()
-
-    if menu_choice == "1":
-        add_member()
-    elif menu_choice == "2":
-        update_member()
-    elif menu_choice == "3":
-        delete_member()
-    elif menu_choice == "4":
-        view_member()
-    elif menu_choice == "5":
-        view_all_members()
     elif menu_choice == "0":
         return
     else:
@@ -258,17 +255,17 @@ def main():
         menu_choice = input("Input Menu (number): ").strip()
 
         if menu_choice == "1":
-            book_management_menu()
+            book_management_menu(connection)
         elif menu_choice == "2":
-            member_management_menu()
+            member_management_menu(connection)
         elif menu_choice == "3":
             borrowing_feature_menu()
         elif menu_choice == "4":
             search_menu()
         elif menu_choice == "5":
-            publisher_management_menu()
+            publisher_management_menu(connection)
         elif menu_choice == "6":
-            author_management_menu()
+            author_management_menu(connection)
         elif menu_choice == "7":
             statistic_menu()
         elif menu_choice == "0":

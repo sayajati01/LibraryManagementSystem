@@ -24,21 +24,49 @@ class Member:
     member_name : str
     member_email : str
 
-# ============== Category enum class =================
-class Category(Enum):
-    HORROR = "Horror"
-    SCIENCE_FICTION = "Sci-Fi"
+# ============== Category class. ==================
+@dataclass
+class Category:
+    category_id : str
+    category_name : str
+
+# ============== Categories enum class =================
+class Categories(Enum):
     FICTION = "Fiction"
+    NON_FICTION = "Non-Fiction"
+    MYSTERY = "Mystery"
     THRILLER = "Thriller"
+    HORROR = "Horror"
+    ROMANCE = "Romance"
+    FANTASY = "Fantasy"
+    SCIENCE_FICTION = "Science Fiction"
+    HISTORICAL = "Historical"
+    BIOGRAPHY = "Biography"
+    AUTOBIOGRAPHY = "Autobiography"
+    SELF_HELP = "Self-Help"
+    PHILOSOPHY = "Philosophy"
+    PSYCHOLOGY = "Psychology"
+    SCIENCE = "Science"
+    TECHNOLOGY = "Technology"
+    BUSINESS = "Business"
+    HISTORY = "History"
+    POETRY = "Poetry"
+    DRAMA = "Drama"
+    CHILDREN = "Children"
+    EDUCATION = "Education"
+    TRAVEL = "Travel"
+    COOKING = "Cooking"
+    RELIGION = "Religion"
+    OTHER = "Other"
 
 #=========== Book class ==========
 @dataclass
 class Book:
     book_id : str
     title : str
-    author : Author
-    publisher : Publisher
-    category : Category
+    author : list[Author]
+    publisher : Publisher | None
+    category : list[Category]
     available : bool
     published_date : date
 

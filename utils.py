@@ -1,4 +1,4 @@
-from models import Book,Author,Member,Category,Publisher
+from models import Book,Author,Member,Categories,Publisher,Category
 from datetime import date, datetime
 import re
 
@@ -6,9 +6,22 @@ import re
 # GET FUNCTIONS
 # =========================================================
 
+def get_category_id() -> str :
+    """
+        return CAT001
+    """
+    while True:
+        sequence = input("Category ID : ").strip()
+        category_id = f"CAT{sequence}"
+
+        if validate_category_id(category_id):
+            return category_id
+        print("INVALID CODE")
+
+
 def get_id(object_name: str) -> str:
     """
-    Generate an ID based on object type.
+    ID based on input
 
     Examples:
         get_id("author")    -> AUT20260001
@@ -17,14 +30,14 @@ def get_id(object_name: str) -> str:
         get_id("book")      -> BOOK20260001
         get_id("borrowing") -> BOR20260001
 
-    The sequence should eventually come from the database.
+    The sequence is from input
     """
     prefixes = {
         "author": "AUT",
         "publisher": "PUB",
         "member": "MEM",
         "book": "BOOK",
-        "borrowing":"BOR",
+        "borrowing":"BOR"
     }
 
     prefix = prefixes.get(object_name.lower())
@@ -32,11 +45,18 @@ def get_id(object_name: str) -> str:
     if prefix is None:
         raise ValueError(f"Unknown object type: {object_name}")
 
-    # Placeholder sequence.
-    # Later, SQLite will determine the next number.
-    sequence = "0001"
+    while True:
+        sequence = input(
+            f"{object_name.capitalize()} ID: "
+        ).strip()
 
-    return f"{prefix}{date.today().year}{sequence}"
+        object_id = f"{prefix}{date.today().year}{sequence}"
+        if validate_id(object_name, object_id):
+            return object_id
+        
+        print("INVALID ID")
+        
+    
 
 
 def get_name(object_name: str) -> str:
@@ -45,7 +65,7 @@ def get_name(object_name: str) -> str:
         if validate_name(name): 
             return name
 
-        raise ValueError(f"Invalid {object_name} name.")  
+        print(f"Invalid {object_name} name.")  
 
 
 def get_email() -> str:
@@ -68,19 +88,7 @@ def get_title() -> str:
         print("INVALID TITLE")
 
 
-def get_author() -> Author:
-    # This will eventually interact with your service/storage
-    # to find an existing Author.
-    author_id = input("Author ID: ").strip()
-
-    if not validate_id(author_id, "author"):
-        raise ValueError("INVALID AUTHOR ID")
-
-    # Placeholder until your database/service layer exists.
-    raise NotImplementedError
-
-
-def get_category() -> Category:
+def get_category_name() -> Categories:
     while True:
         category_input = input("Category: ").strip()
 
@@ -93,17 +101,15 @@ def get_category() -> Category:
         if validate_category(category_input):
             return category_input
 
+def get_city() -> str:
+    while True :
+        city_input = input("City: ").strip().title()
 
-def get_publisher() -> Publisher:
-    publisher_id = input("Publisher ID: ").strip()
+        if validate_city(city_input):
+            return city_input
 
-    if not validate_id(publisher_id, "publisher"):
-        raise ValueError("INVALID PUBLISHER ID")
+        print("INVALID CITY")
 
-    # Eventually:
-    # return services.get_publisher(publisher_id)
-
-    raise NotImplementedError
 
 
 def get_published_date() -> date:
@@ -120,6 +126,11 @@ def get_published_date() -> date:
 # =========================================================
 # VALIDATION FUNCTIONS
 # =========================================================
+
+def validate_category_id(category_id):
+    pattern = rf"^CAT\d{{4}}$"
+
+    return bool(re.fullmatch(pattern, category_id))
 
 def validate_id(object_name: str, object_id: str) -> bool:
     """
@@ -166,7 +177,7 @@ def validate_author(author: Author) -> bool:
     return (
         isinstance(author, Author)
         and validate_id("author", author.author_id)
-        and validate_name(author.name)
+        and validate_name(author.author_name)
     )
 
 
@@ -184,6 +195,9 @@ def validate_published_date(published_date: str) -> bool:
 def validate_publisher(publisher:Publisher) -> bool:
     return isinstance(publisher, Publisher)
 
+def validate_city(city:str) -> bool:
+    return bool(city) and len(city) <= 100
+
 
 # =========================================================
 # VALIDATE A BOOK
@@ -194,8 +208,5 @@ def validate_book(book: Book) -> bool:
         isinstance(book, Book)
         and validate_id("book", book.book_id)
         and validate_title(book.title)
-        and validate_author(book.author)
-        and validate_category(book.category)
-        and validate_publisher(book.publisher)
         and isinstance(book.published_date, date)
     )
