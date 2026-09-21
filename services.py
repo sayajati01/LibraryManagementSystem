@@ -458,25 +458,38 @@ def return_book(member_id: str, book_id: str) -> bool:
     
 #=-= Book Management Menu Functions =-=
 #Function to add a book object
-def add_book() -> None:
+def add_book(connection) -> None:
     print("~~~~ Add a Book Function ~~~~")
     book_id = get_id("book")
     title = get_title()
-
-    #author
-    #publisher
-    #category
-
+    authors = get_authors_sequence(connection)
+    publisher = get_publisher(connection)
+    categories = get_categories_sequence(connection)
     available = True
     published_date = get_published_date()
+
+    new_book = Book(
+        book_id=book_id,
+        title=title,
+        authors=authors,
+        publisher=publisher,
+        categories=categories,
+        available=available,
+        published_date=published_date
+    )
+
+    storage.insert_book_into_database(connection,new_book)
+    storage.insert_book_and_corresponding_authors_into_database(connection,new_book.book_id, authors)
+    storage.insert_book_and_corresponding_categories_into_database(connection,new_book.book_id, categories)
+
+
+
 
 #update existing book
 def update_book(
     book_id: str,
     title: str | None = None,
-    author: Author | None = None,
     publisher: Publisher | None = None,
-    category: str | None = None,
     published_date : date | None = None
 ) -> bool:
     print("~~~~ Function ~~~~")
@@ -527,13 +540,13 @@ def get_categories_sequence(connection):
     category_list = []
     while True:
         category_id = get_category_id()
-        if not storage.check_category_input(connection,category_id):
-            category_name = get_category_name()
-            storage.add_category_to_database(connection, category_id,category_name)
+        if category_id is None :
+            return category_list
         
-        category = Category(category_id,category_name)
-        if category not in category_list:
-            category_list.append(category)
+        if storage.category_exists(connection,category_id):
+            category = storage.get_category_from_database(connection, category_id)
+            if category not in category_list:
+                category_list.append(category)
 
         while True:
             more = input("Add more category? (Y/N)").strip().lower()
@@ -547,7 +560,7 @@ def get_authors_sequence(connection):
     authors_list = []
     while True:
         author_id = get_id("author")
-        author = storage.get_author_from_database(author_id)
+        author = storage.get_author_from_database(connection,author_id)
 
         if author is None :
             print("Author not Found")

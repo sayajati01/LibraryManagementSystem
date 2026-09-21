@@ -50,13 +50,6 @@ def create_tables_books(connection) -> None:
             REFERENCES publishers(publisher_id)
         )
     """)
-    cursor.execute ("""
-        DROP TABLE books;
-    """)
-    cursor.execute ("""
-        ALTER TABLE books_new RENAME TO books;
-    """)
-
 
 def create_tables_categories(connection) -> None:
     cursor = connection.cursor()
@@ -96,7 +89,7 @@ def create_tables_book_authors(connection) -> None:
             PRIMARY KEY (book_id, author_id),
 
             FOREIGN KEY (book_id)
-                REFERENCES books(books_id),
+                REFERENCES books(book_id),
             
             FOREIGN KEY (author_id)
                 REFERENCES authors(author_id)
@@ -136,39 +129,6 @@ def create_tables(connection):
 
 def get_borrowed_books_of_a_member_from_database(member_id:str) -> list[Book]:
     return
-
-# ===-=== BOOK FOCUSED ===-===
-
-def insert_book_to_database(book: Book) -> None:
-    return
-
-def update_book_in_database(
-        book_id:str,
-        title: str | None = None,
-        author: Author | None = None,
-        category: str | None = None,
-    ) -> None:
-    return
-
-def get_books_by_criteria_from_database(
-    book_id:str | None = None,
-    year: int | None = None,
-    month: int | None = None,
-    author_name : str | None = None,
-    category : str | None = None,
-    publisher_id : str | None = None
-) -> list[Book] | None:
-    return
-
-def update_book_availability_in_database(book_id: str, available: bool) -> None:
-    return
-
-def delete_book_from_database(book_id: str) -> bool:
-    return
-
-def check_book_exists_in_database(book_id: str) -> bool:
-    return
-
 
 # ===-=== ===-=== ===-===
 #
@@ -533,6 +493,19 @@ def category_exists(connection, category_id) -> bool:
 
     return cursor.fetchone() is not None
 
+def get_category_from_database(connection, category_id) -> Category:
+    cursor = connection.cursor()
+    cursor.execute("""
+        SELECT category_name
+        FROM categories
+        WHERE category_id = ?
+    """,(
+        category_id,
+    ))
+
+    row = cursor.fetchone()
+    return row[0]
+
 def insert_category_into_db(connection) -> None :
     cursor = connection.cursor()
 
@@ -549,6 +522,124 @@ def insert_category_into_db(connection) -> None :
             category_id, category.value
         ))
         connection.commit()
+    return
+
+# ===-=== BOOK_CATEGORIES TABLE ===-====
+def insert_book_and_corresponding_authors_into_database(
+        connection, 
+        book_id:str, 
+        authors:list[Author]
+    ) -> None:
+    cursor = connection.cursor()
+    for author in authors:
+        cursor.execute("""
+            INSERT INTO book_authors(
+                book_id,
+                author_id
+            )
+            VALUES (?,?)
+        """,(
+            book_id,
+            author.author_id
+        ))
+    connection.commit()
+
+# ===-=== BOOK_AUTHORS TABLE ===-===
+def insert_book_and_corresponding_categories_into_database(
+        connection,
+        book_id:str,
+        categories:list[Category]
+) -> None:
+    cursor = connection.cursor()
+    for category in categories:
+        cursor.execute("""
+            SELECT category_id
+            FROM categories
+            WHERE category_name = ?
+        """,(
+            category,
+        ))
+        row = cursor.fetchone()
+        category_id = row[0]
+        cursor.execute("""
+            INSERT INTO book_categories (
+                book_id,
+                category_id
+            )
+
+            VALUES (?,?)
+        """,(
+            book_id,
+            category_id
+        ))
+
+    connection.commit()
+
+
+# ===-=== BOOK FOCUSED ===-===
+def book_exists(connection, book_id) -> bool:
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT book_id
+        FROM books
+        WHERE book_id = ?
+    """, (book_id,))
+
+    return cursor.fetchone() is not None
+
+def insert_book_into_database(
+        connection,
+        book:Book
+    ) -> None :
+    cursor = connection.cursor()
+
+    if book_exists(connection, book.book_id) :
+        print("Book already exists")
+        return
+
+    publisher_id = None
+    if book.publisher.publisher_id is not None :
+        publisher_id = book.publisher.publisher_id
+
+    cursor.execute("""
+        INSERT INTO books (book_id, title, publisher_id, available, published_date)
+        VALUES (?,?,?,?,?)
+    """,(
+        book.book_id,
+        book.title,
+        publisher_id,
+        book.available,
+        str(book.published_date)
+    ))
+
+    connection.commit()
+
+def update_book_in_database(
+        book_id:str,
+        title: str | None = None,
+        author: Author | None = None,
+        category: str | None = None,
+    ) -> None:
+    return
+
+def get_books_by_criteria_from_database(
+    book_id:str | None = None,
+    year: int | None = None,
+    month: int | None = None,
+    author_name : str | None = None,
+    category : str | None = None,
+    publisher_id : str | None = None
+) -> list[Book] | None:
+    return
+
+def update_book_availability_in_database(book_id: str, available: bool) -> None:
+    return
+
+def delete_book_from_database(book_id: str) -> bool:
+    return
+
+def check_book_exists_in_database(book_id: str) -> bool:
     return
 
 

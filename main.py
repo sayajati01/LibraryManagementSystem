@@ -5,7 +5,7 @@ from storage import create_connection,create_tables,insert_category_into_db
 # =========================
 # STATISTICS
 # =========================
-def statistic_menu():
+def statistic_menu(connection):
     print("""
 -------- STATISTICS MENU --------
 1. Total Books
@@ -20,17 +20,17 @@ def statistic_menu():
     menu_choice = input("Input Menu (number): ").strip()
 
     if menu_choice == "1":
-        show_total_books()
+        show_total_books(connection)
     elif menu_choice == "2":
-        show_total_members()
+        show_total_members(connection)
     elif menu_choice == "3":
-        show_total_publishers()
+        show_total_publishers(connection)
     elif menu_choice == "4":
-        show_total_authors()
+        show_total_authors(connection)
     elif menu_choice == "5":
-        show_currently_borrowed_books()
+        show_currently_borrowed_books(connection)
     elif menu_choice == "6":
-        show_available_books()
+        show_available_books(connection)
     elif menu_choice == "0":
         return
     else:
@@ -139,7 +139,7 @@ def member_management_menu(connection):
 # =========================
 # SEARCH
 # =========================
-def search_menu():
+def search_menu(connection):
     print("""
 -------- SEARCH MENU --------
 1. Search by Book ID
@@ -155,19 +155,19 @@ def search_menu():
     menu_choice = input("Input Menu (number): ").strip()
 
     if menu_choice == "1":
-        search_by_book_id()
+        search_by_book_id(connection)
     elif menu_choice == "2":
-        search_by_title()
+        search_by_title(connection)
     elif menu_choice == "3":
-        search_by_author()
+        search_by_author(connection)
     elif menu_choice == "4":
-        search_by_category()
+        search_by_category(connection)
     elif menu_choice == "5":
-        search_by_publisher()
+        search_by_publisher(connection)
     elif menu_choice == "6":
-        search_by_publication_year()
+        search_by_publication_year(connection)
     elif menu_choice == "7":
-        advanced_search()
+        advanced_search(connection)
     elif menu_choice == "0":
         return
     else:
@@ -177,7 +177,7 @@ def search_menu():
 # =========================
 # BORROWING
 # =========================
-def borrowing_feature_menu():
+def borrowing_feature_menu(connection):
     print("""
 -------- BORROWING FEATURE MENU --------
 1. Borrow Book
@@ -189,11 +189,11 @@ def borrowing_feature_menu():
     menu_choice = input("Input Menu (number): ").strip()
 
     if menu_choice == "1":
-        borrow_book()
+        borrow_book(connection)
     elif menu_choice == "2":
-        return_book()
+        return_book(connection)
     elif menu_choice == "3":
-        get_member_borrowed_books()
+        get_member_borrowed_books(connection)
     elif menu_choice == "0":
         return
     else:
@@ -203,7 +203,7 @@ def borrowing_feature_menu():
 # =========================
 # BOOK MANAGEMENT
 # =========================
-def book_management_menu():
+def book_management_menu(connection):
     print("""
 -------- BOOK MANAGEMENT MENU --------
 1. Add Book
@@ -217,15 +217,15 @@ def book_management_menu():
     menu_choice = input("Input Menu (number): ").strip()
 
     if menu_choice == "1":
-        add_book()
+        add_book(connection)
     elif menu_choice == "2":
-        update_book()
+        update_book(connection)
     elif menu_choice == "3":
-        delete_book()
+        delete_book(connection)
     elif menu_choice == "4":
-        view_all_books()
+        view_all_books(connection)
     elif menu_choice == "5":
-        view_book()
+        view_book(connection)
     elif menu_choice == "0":
         return
     else:
@@ -266,15 +266,15 @@ def main():
         elif menu_choice == "2":
             member_management_menu(connection)
         elif menu_choice == "3":
-            borrowing_feature_menu()
+            borrowing_feature_menu(connection)
         elif menu_choice == "4":
-            search_menu()
+            search_menu(connection)
         elif menu_choice == "5":
             publisher_management_menu(connection)
         elif menu_choice == "6":
             author_management_menu(connection)
         elif menu_choice == "7":
-            statistic_menu()
+            statistic_menu(connection)
         elif menu_choice == "0":
             running = False
         else:

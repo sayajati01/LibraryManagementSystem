@@ -63,9 +63,9 @@ class Category(Enum):
 class Book:
     book_id : str
     title : str
-    author : list[Author]
+    authors : list[Author]
     publisher : Publisher | None
-    category : list[Category]
+    categories : list[str]
     available : bool
     published_date : date
 

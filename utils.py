@@ -5,6 +5,20 @@ import re
 # =========================================================
 # GET FUNCTIONS
 # =========================================================
+def get_category_id() -> str :
+    prefix = "CAT"
+    while True:
+        try:
+            sequence = input("Category ID : ").strip()
+
+            if sequence == "":
+                return None
+
+            end = f"{int(sequence):04d}"
+            return prefix+end
+        except ValueError:
+            print("INVALID ID")
+
 def get_id(object_name: str) -> str:
     """
     ID based on input
