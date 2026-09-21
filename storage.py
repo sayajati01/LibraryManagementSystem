@@ -1,5 +1,6 @@
 from pathlib import Path
 from models import Book,Author,Publisher,Member,Borrowing,Category,MemberStatus
+from datetime import date
 import sqlite3
 
 DATA_FILE = Path(__file__).parent / "library.db"
@@ -506,6 +507,25 @@ def get_category_from_database(connection, category_id) -> Category:
     row = cursor.fetchone()
     return row[0]
 
+def fetch_all_categories(
+        connection
+) -> dict:
+    cursor = connection.cursor()
+    cursor.execute("""
+        SELECT category_id, category_name
+        FROM categories
+    """)
+
+    rows = cursor.fetchall()
+    if rows is None:
+        return None
+    
+    categories = {}
+    for row in rows:
+        categories[row[0]] = row[1]
+
+    return categories
+
 def insert_category_into_db(connection) -> None :
     cursor = connection.cursor()
 
@@ -599,7 +619,7 @@ def insert_book_into_database(
         return
 
     publisher_id = None
-    if book.publisher.publisher_id is not None :
+    if book.publisher is not None :
         publisher_id = book.publisher.publisher_id
 
     cursor.execute("""
@@ -615,21 +635,99 @@ def insert_book_into_database(
 
     connection.commit()
 
+def fetch_all_books_from_database(connection) -> list[Book]:
+    cursor = connection.cursor()
+
+    # Get all books
+    cursor.execute("""
+        SELECT book_id, title, publisher_id, available, published_date
+        FROM books
+    """)
+
+    book_rows = cursor.fetchall()
+
+    books = []
+
+    for book_row in book_rows:
+        book_id = book_row[0]
+        title = book_row[1]
+        publisher_id = book_row[2]
+        available = bool(book_row[3])
+        published_date = date.fromisoformat(book_row[4])
+
+        # Get publisher
+        publisher = None
+
+        if publisher_id is not None:
+            publisher = get_publisher_from_database(
+                connection,
+                publisher_id
+            )
+
+        # Get authors
+        cursor.execute("""
+            SELECT author_id
+            FROM book_authors
+            WHERE book_id = ?
+        """, (book_id,))
+
+        author_rows = cursor.fetchall()
+
+        authors = []
+
+        for author_row in author_rows:
+            author_id = author_row[0]
+
+            author = get_author_from_database(
+                connection,
+                author_id
+            )
+
+            if author is not None:
+                authors.append(author)
+
+        # Get categories
+        cursor.execute("""
+            SELECT category_id
+            FROM book_categories
+            WHERE book_id = ?
+        """, (book_id,))
+
+        category_rows = cursor.fetchall()
+
+        categories = []
+
+        for category_row in category_rows:
+            category_id = category_row[0]
+
+            category = get_category_from_database(
+                connection,
+                category_id
+            )
+
+            if category is not None:
+                categories.append(category)
+
+        # Reconstruct Book object
+        book = Book(
+            book_id=book_id,
+            title=title,
+            authors=authors,
+            publisher=publisher,
+            categories=categories,
+            available=available,
+            published_date=published_date
+        )
+
+        books.append(book)
+
+    return books
+
 def update_book_in_database(
-        book_id:str,
-        title: str | None = None,
-        author: Author | None = None,
-        category: str | None = None,
     ) -> None:
     return
 
 def get_books_by_criteria_from_database(
-    book_id:str | None = None,
-    year: int | None = None,
-    month: int | None = None,
-    author_name : str | None = None,
-    category : str | None = None,
-    publisher_id : str | None = None
 ) -> list[Book] | None:
     return
 

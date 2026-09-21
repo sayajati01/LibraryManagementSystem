@@ -19,7 +19,7 @@ def get_category_id() -> str :
         except ValueError:
             print("INVALID ID")
 
-def get_id(object_name: str) -> str:
+def get_id(object_name: str, required=True) -> str:
     """
     ID based on input
 
@@ -49,6 +49,11 @@ def get_id(object_name: str) -> str:
         sequence = input(
             f"{object_name.capitalize()} ID: "
         ).strip()
+        if not required and sequence == "":
+            return None
+        elif required and sequence == "":
+            print("ID is required\n")
+            continue
 
         object_id = f"{prefix}{date.today().year}{sequence}"
         if validate_id(object_name, object_id):
