@@ -1,4 +1,4 @@
-from models import Book,Author,Member,Category,Publisher
+from models import Book,Author,Member,Category,Publisher,MemberStatus
 import storage
 from utils import *
 from datetime import date
@@ -48,8 +48,12 @@ def get_publisher(connection) :
     
 def add_publisher(connection):
     print("~~~~ Add Publisher Function ~~~~")
-
-    publisher_id = get_id("publisher")
+    while True:
+        publisher_id = get_id("publisher")
+        if storage.publisher_exists(connection, publisher_id):
+            print("Publisher Exists")
+            continue
+        break
     publisher_name = get_name("publisher")
     city = get_city()
 
@@ -160,7 +164,13 @@ def get_author(connection):
 
 def add_author(connection):
     print("~~~~ Add Author Function ~~~~")
-    author_id = get_id("author")
+    while True:
+        author_id = get_id("author")
+        if storage.author_exists(connection, author_id):
+            print("Author Exists")
+            continue
+        break
+
     author_name = get_name("author")
 
     new_author = Author(author_id,author_name)
@@ -224,6 +234,7 @@ def view_all_authors(connection):
         return
     
     for author in author_list:
+        print("--------------------------------------------")
         print(f"{'Author ID':<10} : {author.author_id}")
         print(f"{'Name':<10} : {author.author_name}\n")
 
@@ -247,14 +258,22 @@ def get_member(connection):
 def add_member(connection):
     print("~~~~ Add Member Function ~~~~")
 
-    member_id = get_id("member")
+    while True:
+        member_id = get_id("member")
+        if storage.member_exists(connection, member_id):
+            print("Member Exists")
+            continue
+        break
+
     member_name = get_name("member")
-    email = get_email()
+    member_email = get_email()
+    member_status = MemberStatus.ACTIVE
 
     new_member = Member(
         member_id,
         member_name,
-        email
+        member_email,
+        member_status
     )
 
     storage.insert_member_to_database(
@@ -280,7 +299,8 @@ def update_member(connection):
         connection,
         member.member_id,
         new_member_name,
-        new_email
+        new_email,
+        member.member_status.value
     )
 
     if updated:
@@ -309,6 +329,60 @@ def delete_member(connection):
 
     print("Deletion Failed\n")
 
+def deactivate_member(connection):
+    print("~~~~ Deactivate Member Function ~~~~")
+    member = get_member(connection)
+
+    if member is None:
+        print("Member not Found")
+        return
+
+    if member.member_status == MemberStatus.INACTIVE:
+        print("Member is already inactive")
+        return
+
+    member.member_status = MemberStatus.INACTIVE
+    updated = storage.update_member_in_database(
+        connection,
+        member.member_id,
+        member.member_name,
+        member.member_email,
+        member.member_status.value
+    )
+
+    if updated:
+        print("Update Successful\n")
+        return
+
+    print("Update Failed\n")
+
+def activate_member(connection):
+    print("~~~~ Activate Member Function ~~~~")
+    member = get_member(connection)
+
+    if member is None:
+        print("Member not Found")
+        return
+
+    if member.member_status == MemberStatus.ACTIVE:
+        print("Member is already active")
+        return
+
+    member.member_status = MemberStatus.ACTIVE
+    updated = storage.update_member_in_database(
+        connection,
+        member.member_id,
+        member.member_name,
+        member.member_email,
+        member.member_status.value
+    )
+
+    if updated:
+        print("Update Successful\n")
+        return
+
+    print("Update Failed\n")
+
 
 def view_member(connection):
     print("~~~~ View a Member Function ~~~~")
@@ -330,9 +404,11 @@ def view_all_members(connection):
         return
 
     for member in member_list:
+        print("--------------------------------------------")
         print(f"{'Member ID':<15} : {member.member_id}")
-        print(f"{'Member Name':<15} : {member.member_name}\n")
-        print(f"{'Member Email':<15} : {member.member_email}\n")
+        print(f"{'Member Name':<15} : {member.member_name}")
+        print(f"{'Member Email':<15} : {member.member_email}")
+        print(f"{'Member Status':<15} : {member.member_status.value}\n")
     return
 
 #=-= Search Menu Functions =-=

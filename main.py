@@ -1,5 +1,5 @@
 from services import *
-from storage import create_connection,create_tables
+from storage import create_connection,create_tables,insert_category_into_db
 
 
 # =========================
@@ -102,29 +102,35 @@ def author_management_menu(connection):
 # =========================
 # MEMBER MANAGEMENT
 # =========================
-def member_management_menu():
+def member_management_menu(connection):
     print("""
 -------- MEMBER MANAGEMENT MENU --------
 1. Add Member
 2. Update Member
 3. Delete Member
-4. View Member
-5. View All Members
+4. Activate Member
+5. Deactivate Member
+6. View Member
+7. View All Members
 0. Back
 """)
 
     menu_choice = input("Input Menu (number): ").strip()
 
     if menu_choice == "1":
-        add_member()
+        add_member(connection)
     elif menu_choice == "2":
-        update_member()
+        update_member(connection)
     elif menu_choice == "3":
-        delete_member()
+        delete_member(connection)
     elif menu_choice == "4":
-        view_member()
+        activate_member(connection)
     elif menu_choice == "5":
-        view_all_members()
+        deactivate_member(connection)
+    elif menu_choice == "6":
+        view_member(connection)
+    elif menu_choice == "7":
+        view_all_members(connection)
     elif menu_choice == "0":
         return
     else:
@@ -248,6 +254,7 @@ def main():
     running = True
     connection = create_connection()
     create_tables(connection)
+    insert_category_into_db(connection)
 
     while running:
         display_menu()

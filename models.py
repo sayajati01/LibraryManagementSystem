@@ -23,15 +23,14 @@ class Member:
     member_id : str
     member_name : str
     member_email : str
+    member_status : MemberStatus
 
-# ============== Category class. ==================
-@dataclass
-class Category:
-    category_id : str
-    category_name : str
+class MemberStatus(Enum) :
+    ACTIVE = "Active"
+    INACTIVE = "Inactive"
 
 # ============== Categories enum class =================
-class Categories(Enum):
+class Category(Enum):
     FICTION = "Fiction"
     NON_FICTION = "Non-Fiction"
     MYSTERY = "Mystery"

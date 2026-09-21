@@ -1,24 +1,10 @@
-from models import Book,Author,Member,Categories,Publisher,Category
+from models import Book,Author,Member,Publisher,Category
 from datetime import date, datetime
 import re
 
 # =========================================================
 # GET FUNCTIONS
 # =========================================================
-
-def get_category_id() -> str :
-    """
-        return CAT001
-    """
-    while True:
-        sequence = input("Category ID : ").strip()
-        category_id = f"CAT{sequence}"
-
-        if validate_category_id(category_id):
-            return category_id
-        print("INVALID CODE")
-
-
 def get_id(object_name: str) -> str:
     """
     ID based on input
@@ -88,7 +74,7 @@ def get_title() -> str:
         print("INVALID TITLE")
 
 
-def get_category_name() -> Categories:
+def get_category_name() -> Category:
     while True:
         category_input = input("Category: ").strip()
 
@@ -126,12 +112,6 @@ def get_published_date() -> date:
 # =========================================================
 # VALIDATION FUNCTIONS
 # =========================================================
-
-def validate_category_id(category_id):
-    pattern = rf"^CAT\d{{4}}$"
-
-    return bool(re.fullmatch(pattern, category_id))
-
 def validate_id(object_name: str, object_id: str) -> bool:
     """
     Validate an ID according to its object type.

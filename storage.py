@@ -1,12 +1,12 @@
 from pathlib import Path
-from models import Book,Author,Publisher,Member,Borrowing
+from models import Book,Author,Publisher,Member,Borrowing,Category,MemberStatus
 import sqlite3
 
 DATA_FILE = Path(__file__).parent / "library.db"
 
 
 # ========= LIBRARY MANAGEMENT FUNCTION =========
-def create_tables_publisher(connection) -> None:
+def create_tables_publishers(connection) -> None:
     cursor = connection.cursor()
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS publishers (
@@ -16,7 +16,7 @@ def create_tables_publisher(connection) -> None:
         )
     """)
 
-def create_tables_author(connection) -> None:
+def create_tables_authors(connection) -> None:
     cursor = connection.cursor()
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS authors (
@@ -25,35 +25,38 @@ def create_tables_author(connection) -> None:
         )
     """)
 
-def create_tables_member(connection) -> None:
+def create_tables_members(connection) -> None:
     cursor = connection.cursor()
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS members (
             member_id TEXT PRIMARY KEY,
             member_name TEXT NOT NULL,
-            member_email TEXT NOT NULL
+            member_email TEXT NOT NULL,
+            member_status TEXT NOT NULL
         )
     """)
 
 def create_tables_books(connection) -> None:
     cursor = connection.cursor()
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS books (
+        CREATE TABLE IF NOT EXISTS books_new (
             book_id TEXT PRIMARY KEY,
             title TEXT NOT NULL,
-            author_id TEXT NOT NULL,
-            publisher_id TEXT NOT NULL,
-            category TEXT NOT NULL,
+            publisher_id TEXT,
             available INTEGER NOT NULL DEFAULT 1,
             published_date TEXT NOT NULL,
 
-        FOREIGN KEY (author_id)
-            REFERENCES authors(author_id)
-        
         FOREIGN KEY (publisher_id)
             REFERENCES publishers(publisher_id)
         )
     """)
+    cursor.execute ("""
+        DROP TABLE books;
+    """)
+    cursor.execute ("""
+        ALTER TABLE books_new RENAME TO books;
+    """)
+
 
 def create_tables_categories(connection) -> None:
     cursor = connection.cursor()
@@ -101,7 +104,7 @@ def create_tables_book_authors(connection) -> None:
     """)
     
 
-def create_tables_borrowing(connection) -> None:
+def create_tables_borrowings(connection) -> None:
     cursor = connection.cursor()
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS borrowings (
@@ -120,14 +123,14 @@ def create_tables_borrowing(connection) -> None:
     """)
 
 def create_tables(connection):
-    create_tables_publisher(connection)
-    create_tables_author(connection)
-    create_tables_member(connection)
+    create_tables_publishers(connection)
+    create_tables_authors(connection)
+    create_tables_members(connection)
     create_tables_books(connection)
     create_tables_categories(connection)
     create_tables_book_authors(connection)
     create_tables_book_categories(connection)
-    create_tables_borrowing(connection)
+    create_tables_borrowings(connection)
 
     connection.commit()
 
@@ -172,10 +175,25 @@ def check_book_exists_in_database(book_id: str) -> bool:
 # Publisher Focused 
 #
 # ===-=== ===-=== ===-===
-def insert_publisher_to_database(connection, publisher : Publisher) -> None:
+def publisher_exists (connection, publisher_id) -> bool :
     cursor = connection.cursor()
     cursor.execute("""
-        INSERT INTO publishers (
+        SELECT publisher_id
+        FROM publishers
+        WHERE publisher_id = ?
+    """,(publisher_id,))
+
+    return cursor.fetchone() is not None
+
+def insert_publisher_to_database(connection, publisher : Publisher) -> None:
+    cursor = connection.cursor()
+
+    if publisher_exists(connection, publisher.publisher_id):
+        print("Publisher Exists")
+        return
+    
+    cursor.execute("""
+        INSERT OR IGNORE INTO publishers (
             publisher_id, 
             publisher_name,
             publisher_city
@@ -270,8 +288,23 @@ def fetch_all_publishers_from_database(connection) -> list[Publisher]:
 # AUTHOR FOCUSED 
 # 
 # ===-=== ===-=== ===-===
+def author_exists (connection, author_id) -> bool :
+    cursor = connection.cursor()
+    cursor.execute("""
+        SELECT author_id
+        FROM authors
+        WHERE author_id = ?
+    """,(author_id,))
+
+    return cursor.fetchone() is not None
+
 def insert_author_to_database(connection, author : Author) -> None:
     cursor = connection.cursor()
+
+    if author_exists(connection, author.author_id):
+        print("Author Exists")
+        return
+    
     cursor.execute("""
         INSERT INTO authors (
             author_id, author_name
@@ -365,26 +398,43 @@ def fetch_all_authors_from_database(
 # MEMBER FOCUSED
 # 
 # ===-=== ===-=== ===-===
+def member_exists(connection, member_id) -> bool:
+    cursor = connection.cursor()
+    cursor.execute("""
+        SELECT member_id
+        FROM members
+        WHERE member_id = ?
+    """,(member_id,))
+
+    return cursor.fetchone() is not None
+
 def insert_member_to_database(connection, member:Member) -> None:
     cursor = connection.cursor()
+
+    if member_exists(connection, member.member_id):
+        print("Member Exists")
+        return
+    
     cursor.execute("""
         INSERT INTO members (
             member_id,
             member_name,
-            member_email
+            member_email,
+            member_status
         ) 
-        VALUES ( ? ,? ,?)
+        VALUES ( ? ,? ,?, ?)
     """, (
         member.member_id , 
         member.member_name,
-        member.member_email
+        member.member_email,
+        member.member_status.value
     ))
     connection.commit()
     
 def get_member_from_database(connection, member_id : str) -> Member | None:
     cursor = connection.cursor()
     cursor.execute("""
-        SELECT member_id, member_name, member_email
+        SELECT member_id, member_name, member_email, member_status
         FROM members
         WHERE member_id = ?
     """, (
@@ -399,7 +449,8 @@ def get_member_from_database(connection, member_id : str) -> Member | None:
     member = Member(
         member_id=row[0],
         member_name=row[1],
-        member_email=row[2]
+        member_email=row[2],
+        member_status=MemberStatus(row[3])
     )
 
     return member
@@ -407,18 +458,21 @@ def get_member_from_database(connection, member_id : str) -> Member | None:
 def update_member_in_database(
         connection,
         member_id : str,
-        new_member_name : str,
-        new_member_email : str
+        updated_name : str,
+        updated_email : str,
+        updated_status : str
 ) -> bool:
     cursor = connection.cursor()
     cursor.execute("""
         UPDATE members
         SET member_name = ?,
-            member_email = ?
+            member_email = ?,
+            member_status = ?
         WHERE member_id = ?
     """, (
-        new_member_name,
-        new_member_email,
+        updated_name,
+        updated_email,
+        updated_status,
         member_id
     ))
 
@@ -444,7 +498,7 @@ def fetch_all_members_from_database(
 ) -> list[Member]:
     cursor = connection.cursor()
     cursor.execute("""
-        SELECT member_id, member_name, member_email
+        SELECT member_id, member_name, member_email, member_status
         FROM members
     """)
 
@@ -455,49 +509,48 @@ def fetch_all_members_from_database(
         member = Member(
             member_id=row[0],
             member_name=row[1],
-            member_email=row[2]
+            member_email=row[2],
+            member_status=MemberStatus(row[3])
         )
         members.append(member)
 
     return members
 
 # -=-=- Category? =-=-=-=
-def check_category_input(
-        connection,
-        category_id
-        ) -> bool :
+def generate_category_id(sequence) -> str:
+    prefix = "CAT"
+    end = f"{sequence:04d}"
+
+    return prefix+end
+
+def category_exists(connection, category_id) -> bool:
     cursor = connection.cursor()
     cursor.execute("""
         SELECT category_id
         FROM categories
         WHERE category_id = ?
-    """, (
-        category_id,
-    ))
+    """,(category_id,))
 
-    row = cursor.fetchone()
-    if row is None :
-        return False
+    return cursor.fetchone() is not None
 
-    return True
-
-def add_category_to_database (
-        connection,
-        category_id,
-        category_name
-)-> None :
+def insert_category_into_db(connection) -> None :
     cursor = connection.cursor()
-    cursor.execute("""
-        INSERT INTO categories (
-            category_id, category_name
-        )
-        VALUES (? , ?)
 
-    """,(
-        category_id,
-        category_name
-    ))
-    
+    for sequence,category in enumerate(Category, start=1):
+        category_id = generate_category_id(sequence)
+
+        if category_exists(connection, category_id):
+            continue
+
+        cursor.execute ("""
+            INSERT INTO categories (category_id, category_name)
+            VALUES (? ,?)
+        """,(
+            category_id, category.value
+        ))
+        connection.commit()
+    return
+
 
 # === sql function ===
 def create_connection():
