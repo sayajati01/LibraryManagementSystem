@@ -126,6 +126,9 @@ def get_published_date() -> date:
             continue
 
         return datetime.strptime(date_input, "%Y-%m-%d").date()
+    
+def get_current_date() -> date:
+    return datetime.now.date()
 
 
 # =========================================================

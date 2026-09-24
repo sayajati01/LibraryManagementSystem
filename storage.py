@@ -520,7 +520,7 @@ def display_member_with_given_id(connection, member_id: str) -> None:
     print(f"Member Email  : {row[2]}")
     print(f"Member Status : {row[3]}")
 
-# -=-=- Category? =-=-=-=
+# -=-=- Category =-=-=-=
 def generate_category_id(sequence) -> str:
     prefix = "CAT"
     end = f"{sequence:04d}"
@@ -639,7 +639,11 @@ def insert_book_and_corresponding_categories_into_database(
     connection.commit()
 
 
-# ===-=== BOOK FOCUSED ===-===
+# ===-=== ===-=== ===--==
+# 
+# BOOK FOCUSED 
+# 
+# ===-=== =-==-== ===-==-=
 def get_book_from_database(connection, book_id: str) -> Book | None:
     cursor = connection.cursor()
 
@@ -935,14 +939,39 @@ def get_books_by_criteria_from_database(
 ) -> list[Book] | None:
     return
 
-def update_book_availability_in_database(book_id: str, available: bool) -> None:
-    return
+def update_book_availability_in_database(connection, book_id: str, available: bool) -> bool:
+    cursor = connection.cursor()
 
-def delete_book_from_database(book_id: str) -> bool:
-    return
+    cursor.execute("""
+        UPDATE books
+        SET available = ?
+        WHERE book_id = ?
+    """,(
+        available,
+        book_id
+    ))
+    connection.commit()
+    return True
 
-def check_book_exists_in_database(book_id: str) -> bool:
-    return
+def delete_book_from_database(connection, book_id: str) -> bool:
+    cursor = connection.cursor()
+    #table book_authors
+    cursor.execute("""
+        SELECT FROM book_authors
+        WHERE book_id = ?
+    """,(book_id))
+    #table book_categories
+    cursor.execute("""
+        SELECT FROM book_categories
+        WHERE book_id = ?    
+    """,(book_id))
+    #table books
+    cursor.execute("""
+        SELECT FROM books
+        WHERE book_id = ?
+    """,(book_id))
+    connection.commit()
+    
 
 def display_book_with_given_id(connection, book_id: str) -> None:
     cursor = connection.cursor()
@@ -1010,7 +1039,127 @@ def display_book_with_given_id(connection, book_id: str) -> None:
     print(f"Available       : {bool(row[3])}")
     print(f"Published Date  : {row[4]}")
 
+#=========================
+# 
+# BORROWING FOCUSED
+# 
+# =========================
+def display_borrowing_given_id(connection, borrowing_id: str) -> None:
+    cursor = connection.cursor()
 
+    cursor.execute("""
+        SELECT borrowing_id, member_id, book_id, borrow_date, return_date
+        FROM borrowings
+        WHERE borrowing_id = ?
+    """, (borrowing_id,))
+
+    row = cursor.fetchone()
+
+    print(f"Borrowing ID : {row[0]}")
+    print(f"Member ID    : {row[1]}")
+    print(f"Book ID      : {row[2]}")
+    print(f"Borrow Date  : {row[3]}")
+    print(f"Return Date  : {row[4]}")
+
+def insert_borrowing_into_database(
+    connection,
+    borrowing: Borrowing
+) -> bool:
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        INSERT INTO borrowings (
+            borrowing_id,
+            member_id,
+            book_id,
+            borrow_date
+        )
+        VALUES (?, ?, ?, ?)
+    """, (
+        borrowing.borrowing_id,
+        borrowing.member_id,
+        borrowing.book_id,
+        str(borrowing.borrow_date)
+    ))
+
+    connection.commit()
+
+    return True
+
+def get_borrowing_from_database(
+        connection,
+        borrowing_id
+) -> Borrowing:
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT borrowing_id, member_id, book_id, borrow_date, return_date
+        FROM borrowings
+        where borrowing_id = ?
+    """,(
+        borrowing_id,
+    ))
+    row = cursor.fetchone()
+    if row is None :
+        return None
+    
+    borrow_date=date.fromisoformat(row[3])
+    if row[4] is not None:
+        return_date=date.fromisoformat(row[4])
+    else:
+        return_date = None
+    borrowing = Borrowing(
+        borrowing_id=row[0],
+        member_id=row[1],
+        book_id=row[2],
+        borrow_date=borrow_date,
+        return_date=return_date
+    )
+
+    return borrowing
+
+def update_borrowing_in_database(
+        connection,
+        borrowing:Borrowing
+) -> bool:
+    cursor = connection.cursor()
+    cursor.execute("""
+        UPDATE borrowings
+        SET return_date = ?
+        WHERE borrowing_id = ?
+    """,(
+        borrowing.return_date,
+        borrowing.borrowing_id
+    ))
+
+def display_member_borrowing(connection, member:Member) -> None:
+    cursor = connection.cursor()
+
+    #Select the books borrowed by the member first(by member_id)
+    cursor.execute("""
+        SELECT book_id, borrow_date, return_date
+        FROM borrowings
+        WHERE member_id = ?
+    """,(
+        member.member_id
+    ))
+    rows = cursor.fetchall()
+    if not rows:
+        return None
+    else:
+        #else if member has borrowed book
+        print(f"--- {member.member_name} ---")
+        print(f"{'Book Title':<40} | {'Borrow Date':<12} | {'Return Date':<12}")
+        print("-" * 70)
+        for row in rows:
+            book_id = row[0]
+            book = get_book_from_database(connection, book_id)
+            print(
+                f"{book.title:<40} | "
+                f"{row[1]:<12} | "
+                f"{row[2] if row[2] is not None else '-':<12}"
+            )    
 # === sql function ===
 def create_connection():
     connection = sqlite3.connect("library.db")

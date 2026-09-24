@@ -1,4 +1,4 @@
-from models import Book,Author,Member,Category,Publisher,MemberStatus
+from models import Book,Author,Member,Category,Publisher,MemberStatus,Borrowing
 import storage
 from utils import *
 from datetime import date
@@ -237,8 +237,12 @@ def view_all_authors(connection):
 
 #=-= Member Management Menu Functions =-=
 #get the books borrowed by a member
-def get_member_borrowed_books(member_id:str) -> list[Book]:
-    print("~~~~ Function ~~~~")
+def display_member_borrowed_books(connection) -> None:
+    print("~~~~ Member Borrowed Book Function ~~~~")
+    member = get_member(connection, required=False)
+
+    if member is not None:
+        storage.display_member_borrowing(connection, member)
     return
 
 def get_member(connection,required):
@@ -445,14 +449,81 @@ def advanced_search():
     pass
 
 #=-= Borrowing Feature Menu Functions =-=
-#to borrow book, from one member, to one book (checkif both available)
-def borrow_book(member_id: str, book_id: str) -> bool:
-    print("~~~~ Function ~~~~")
-    return
+def get_borrowing(connection, required):
+    borrowing_id = get_id("member",required)
+
+    borrowing = storage.get_borrowing_from_database(
+        connection,
+        borrowing_id
+    )
+    return borrowing if borrowing is not None else None
+
+def borrow_book(connection) -> bool:
+    print("~~~~ Borrow a Book Function ~~~~")
+
+    # Get Member First
+    member = get_member(connection, required=False)
+    if member is None:
+        return
+    elif member.member_status == "Inactive":
+        print("Not Eligible to Borrow, Status Member Inactive.\n")
+        return
+
+    while True:
+    #wrap in while true for condition if book desired isnt available
+        # member is not None, get book next
+        book_to_borrow = get_book(connection, required=False)
+        if book_to_borrow is None:
+            print("Cancelling Borrow Book")
+            return
+
+        # book is not None, check availability
+        if not book_to_borrow.available :
+            print("Book is not available to borrow, choose another book")
+            continue
+        else:
+            #else available, get current date
+            borrow_date = get_current_date()
+            borrowing_id = get_id("borrowing")
+            
+
+            new_borrowing = Borrowing(
+                borrowing_id=borrowing_id,
+                member_id=member.member_id,
+                book_id=book_to_borrow.book_id,
+                borrow_date=borrow_date
+            )
+            storage.insert_borrowing_into_database(connection, new_borrowing)
+            storage.update_book_availability_in_database(connection, book_to_borrow.book_id, False)
+            storage.display_borrowing_given_id(connection, new_borrowing.borrowing_id)
+            print("New Borrowing Entry has been Added.\n")
+            break
+
 # to return book
-def return_book(member_id: str, book_id: str) -> bool:
+def return_book(connection) -> bool:
     print("~~~~ Function ~~~~")
-    return
+    #get borrowing object from database
+    borrowing = get_borrowing(connection, required=False)
+    if borrowing is None:
+        return
+
+    #check if return date is filled or not
+    if borrowing.return_date is not None:
+        print("Book already returned")
+        return
+
+    #update availability to true(available)
+    book = storage.get_book_from_database(connection, borrowing.book_id)
+    storage.update_book_availability_in_database(connection, True)
+
+    #update return_date to current date
+    return_date = datetime.now().date()
+    borrowing.return_date = return_date
+
+    #update database
+    storage.update_borrowing_in_database(connection, borrowing)
+    storage.display_borrowing_given_id(connection, borrowing_id=borrowing.borrowing_id)
+    return True
     
 #=-= Book Management Menu Functions =-=
 def get_book(connection, required) -> Book | None:
@@ -547,9 +618,20 @@ def update_book(
             print("INVALID MENU")
 
 #to delete a book, returns True if exists and deleted, else False
-def delete_book(book_id: str) -> bool:
-    print("~~~~ Function ~~~~")
-    return
+def delete_book(connection, book_id: str) -> bool:
+    print("~~~~ Delete a Book Function ~~~~")
+    while True:
+        book_id = get_id("book",required=False)
+        if book_id is None:
+            return False
+        elif not storage.book_exists(connection, book_id):
+            print("Book Not Found")
+            continue
+        else:
+            storage.display_book_with_given_id(connection,book_id)
+            break
+    return storage.delete_book_from_database(connection, book_id)
+
 
 def view_all_books(connection):
     print("~~~~ View All Books Function ~~~~")
