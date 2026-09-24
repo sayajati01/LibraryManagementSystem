@@ -36,6 +36,7 @@ def show_available_books():
 
 #=-= Publisher Management menu Functions =-=
 def get_publisher(connection,required) :
+    view_all_publishers(connection)
     publisher_id = get_id("publisher",required)
     
     publisher = storage.get_publisher_from_database(
@@ -69,9 +70,8 @@ def add_publisher(connection):
     )
 
     print("New Publisher has been added\n")
-    print(f"{'Publisher ID':<20} : {new_publisher.publisher_id}")
-    print(f"{'Publisher Name':<20} : {new_publisher.publisher_name}")
-    print(f"{'Publisher City':<20} : {new_publisher.publisher_city}\n")
+    storage.display_publisher_with_given_id(connection,new_publisher.publisher_id)
+
 
 
 
@@ -82,6 +82,8 @@ def update_publisher(connection):
     if publisher is None:
         print("Publisher not Found")
         return
+
+    storage.display_publisher_with_given_id(connection,publisher.publisher_id)
 
     new_publisher_name = get_name("publisher")
     new_city = get_city()
@@ -95,10 +97,7 @@ def update_publisher(connection):
 
     if updated:
         print("Update Successful\n")
-        print(f"-------------- {publisher.publisher_name.upper()} -------------")
-        print(f"{'Publisher ID':<20} : {publisher.publisher_id}")
-        print(f"{'Publisher Name':<20} : {publisher.publisher_name}")
-        print(f"{'Publisher City':<20} : {publisher.publisher_city}\n")
+        storage.display_publisher_with_given_id(connection,publisher.publisher_id)
         return
 
     print("Update Failed\n")
@@ -111,7 +110,7 @@ def delete_publisher(connection):
     if publisher is None:
         print("Publisher not Found")
         return
-    
+    storage.display_publisher_with_given_id(connection,publisher.publisher_id)
     deleted = storage.delete_publisher_from_database(
         connection,
         publisher.publisher_id
@@ -132,10 +131,7 @@ def view_publisher(connection):
         print("Publisher not Found")
         return
 
-    print(f"-------------- {publisher.publisher_name.upper()} -------------")
-    print(f"{'Publisher ID':<20} : {publisher.publisher_id}")
-    print(f"{'Publisher Name':<20} : {publisher.publisher_name}")
-    print(f"{'Publisher City':<20} : {publisher.publisher_city}\n")
+    storage.display_publisher_with_given_id(connection,publisher.publisher_id)
 
 
 def view_all_publishers(connection):
@@ -177,6 +173,7 @@ def add_author(connection):
         new_author
     )
     print("New Author has been added\n")
+    storage.display_author_with_given_id(connection, new_author.author_id)
 
 def update_author(connection):
     print("~~~~ Update Author Function ~~~~")
@@ -184,6 +181,7 @@ def update_author(connection):
     if author is None:
         print("Author not Found")
         return
+    storage.display_author_with_given_id(connection, author.author_id)
 
     new_author_name = get_name("author")
     updated = storage.update_author_in_database(
@@ -194,6 +192,7 @@ def update_author(connection):
 
     if updated:
         print("Update Succesfull\n")
+        storage.display_author_with_given_id(connection, author.author_id)
         return
 
     print("Update Failed\n")
@@ -205,6 +204,7 @@ def delete_author(connection):
     if author is None:
         print("Author not Found")
         return
+    storage.display_author_with_given_id(connection, author.author_id)
 
     deleted = storage.delete_author_from_database(connection, author.author_id)
     if deleted :
@@ -219,9 +219,7 @@ def view_author(connection):
     if author is None:
         print("Author not Found")
         return
-
-    print(f"{'Author ID':<10} : {author.author_id}")
-    print(f"{'Name':<10} : {author.author_name}\n")
+    storage.display_author_with_given_id(connection, author.author_id)
 
 def view_all_authors(connection):
     print("~~~~View all Author Function ~~~~")
@@ -279,6 +277,7 @@ def add_member(connection):
     )
 
     print("New Member has been added\n")
+    storage.display_member_with_given_id(connection,new_member.member_id)
 
 
 def update_member(connection):
@@ -288,6 +287,7 @@ def update_member(connection):
     if member is None:
         print("Member not Found")
         return
+    storage.display_member_with_given_id(connection,member.member_id)
 
     new_member_name = get_name("member")
     new_email = get_email()
@@ -302,6 +302,7 @@ def update_member(connection):
 
     if updated:
         print("Update Successful\n")
+        storage.display_member_with_given_id(connection,member.member_id)
         return
 
     print("Update Failed\n")
@@ -314,6 +315,7 @@ def delete_member(connection):
     if member is None:
         print("Member not Found")
         return
+    storage.display_member_with_given_id(connection,member.member_id)
 
     deleted = storage.delete_member_from_database(
         connection,
@@ -333,6 +335,8 @@ def deactivate_member(connection):
     if member is None:
         print("Member not Found")
         return
+    
+    storage.display_member_with_given_id(connection,member.member_id)
 
     if member.member_status == MemberStatus.INACTIVE:
         print("Member is already inactive")
@@ -360,6 +364,8 @@ def activate_member(connection):
     if member is None:
         print("Member not Found")
         return
+    
+    storage.display_member_with_given_id(connection,member.member_id)
 
     if member.member_status == MemberStatus.ACTIVE:
         print("Member is already active")
@@ -376,6 +382,7 @@ def activate_member(connection):
 
     if updated:
         print("Update Successful\n")
+        storage.display_member_with_given_id(connection,member.member_id)
         return
 
     print("Update Failed\n")
@@ -387,10 +394,7 @@ def view_member(connection):
     if member is None:
         print("Member not Found")
         return
-
-    print(f"{'Member ID':<15} : {member.member_id}")
-    print(f"{'Member Name':<15} : {member.member_name}\n")
-    print(f"{'Member Email':<15} : {member.member_email}\n")
+    storage.display_member_with_given_id(connection,member.member_id)
     
 def view_all_members(connection):
     print("~~~~ View all Members Function ~~~~")
@@ -451,6 +455,13 @@ def return_book(member_id: str, book_id: str) -> bool:
     return
     
 #=-= Book Management Menu Functions =-=
+def get_book(connection, required) -> Book | None:
+    book_id = get_id("book",required)
+
+    book = storage.get_book_from_database(connection,book_id)
+
+    return book if book is not None else None
+
 #Function to add a book object
 def add_book(connection) -> None:
     print("~~~~ Add a Book Function ~~~~")
@@ -482,24 +493,63 @@ def add_book(connection) -> None:
     storage.insert_book_and_corresponding_authors_into_database(connection,new_book.book_id, authors)
     storage.insert_book_and_corresponding_categories_into_database(connection,new_book.book_id, categories)
 
-
-
-
 #update existing book
 def update_book(
-    book_id: str,
-    title: str | None = None,
-    publisher: Publisher | None = None,
-    published_date : date | None = None
+        connection
 ) -> bool:
-    print("~~~~ Function ~~~~")
-    return
+    print("~~~~ Update a Book Function ~~~~")
+
+    while True:
+        book_id = get_id("book",required=False)
+        if book_id is None:
+            return False
+        elif not storage.book_exists(connection, book_id):
+            print("Book Not Found")
+            continue
+        else:
+            storage.display_book_with_given_id(connection,book_id)
+            book = storage.get_book_from_database(connection,book_id)
+            break
+
+    while True:
+        print("""
+        ┌──────────────────────────────┐
+        │       UPDATE BOOK MENU       │
+        ├──────────────────────────────┤
+        │ 1. Title                     │
+        │ 2. Authors                   │
+        │ 3. Publisher                 │
+        │ 4. Categories                │
+        │ 5. Published Date            │
+        │ 0. Done                      │
+        └──────────────────────────────┘
+        """)
+
+        choice = input("Input Menu (number): ").strip()
+        if choice == "1":
+            updated_title = get_title()
+            storage.update_book_in_database(connection, book, title=updated_title)
+        elif choice == "2":
+            updated_authors = get_authors_sequence(connection)
+            storage.update_book_in_database(connection, book, authors=updated_authors)
+        elif choice == "3":
+            updated_publisher = get_publisher(connection, required=False)
+            storage.update_book_in_database(connection, book, publisher=updated_publisher)
+        elif choice == "4":
+            updated_categories = get_categories_sequence(connection)
+            storage.update_book_in_database(connection, book, categories=updated_categories)
+        elif choice == "5":
+            updated_published_date = get_published_date()
+            storage.update_book_in_database(connection, book, published_date=updated_published_date)
+        elif choice == "0":
+            return
+        else:
+            print("INVALID MENU")
 
 #to delete a book, returns True if exists and deleted, else False
 def delete_book(book_id: str) -> bool:
     print("~~~~ Function ~~~~")
     return
-
 
 def view_all_books(connection):
     print("~~~~ View All Books Function ~~~~")
@@ -508,8 +558,7 @@ def view_all_books(connection):
     if not books :
         print("No Books in Database")
         return
-
-
+    
     for book in books:
         authors = ", ".join(author.author_name for author in book.authors)
         categories = ", ".join(category for category in book.categories)
@@ -519,38 +568,20 @@ def view_all_books(connection):
         else:
             publisher_name = book.publisher.publisher_name
         print(f"{book.book_id}| {book.title:<30}| {authors:<25}| {publisher_name:<25}| {categories:<25}| {book.available:<10}| {str(book.published_date):<15}")
-    
 
-
-def view_book():
-    print("~~~~ Function ~~~~")
-    pass
-
-
-#to get all books in list
-def get_all_books() -> list[Book]:
-    print("~~~~ Function ~~~~")
-    return
-
-#get book by criteria
-def get_books_by(
-    book_id: str | None = None,
-    year: int | None = None,
-    month: int | None = None,
-    author_name: str | None = None,
-    category: str | None = None,
-    publisher_id: str | None = None,
-) -> list[Book]:
-    print("~~~~ Function ~~~~")
-    return storage.get_books_by_criteria_from_database(
-        book_id=book_id,
-        year=year,
-        month=month,
-        author_name=author_name,
-        category=category,
-        publisher_id=publisher_id,
-    )
-
+def view_book(connection):
+    print("~~~~ View A Book Function ~~~~")
+    while True:
+        book_id = get_id("book",required=False)
+        if book_id is None:
+            return False
+        elif not storage.book_exists(connection, book_id):
+            print("Book Not Found")
+            continue
+        else:
+            storage.display_book_with_given_id(connection,book_id)
+            return
+        
 #get category sequence
 def get_categories_sequence(connection):
     category_list = []

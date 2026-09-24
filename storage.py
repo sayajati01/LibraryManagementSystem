@@ -79,7 +79,6 @@ def create_tables_book_categories(connection) -> None:
         )
     """)
     
-
 def create_tables_book_authors(connection) -> None:
     cursor = connection.cursor()
     cursor.execute("""
@@ -97,7 +96,6 @@ def create_tables_book_authors(connection) -> None:
         )
     """)
     
-
 def create_tables_borrowings(connection) -> None:
     cursor = connection.cursor()
     cursor.execute("""
@@ -244,6 +242,21 @@ def fetch_all_publishers_from_database(connection) -> list[Publisher]:
         publishers.append(publisher)
     return publishers
 
+def display_publisher_with_given_id(connection, publisher_id: str) -> None:
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT publisher_id, publisher_name, publisher_city
+        FROM publishers
+        WHERE publisher_id = ?
+    """, (publisher_id,))
+
+    row = cursor.fetchone()
+
+    print(f"Publisher ID   : {row[0]}")
+    print(f"Publisher Name : {row[1]}")
+    print(f"Publisher City : {row[2]}")
+
 # ===-===  ===-===  ===-===
 # 
 # AUTHOR FOCUSED 
@@ -351,6 +364,20 @@ def fetch_all_authors_from_database(
         author_list.append(author)
 
     return author_list
+
+def display_author_with_given_id(connection, author_id: str) -> None:
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT author_id, author_name
+        FROM authors
+        WHERE author_id = ?
+    """, (author_id,))
+
+    row = cursor.fetchone()
+
+    print(f"Author ID   : {row[0]}")
+    print(f"Author Name : {row[1]}")
     
 
 
@@ -477,6 +504,22 @@ def fetch_all_members_from_database(
 
     return members
 
+def display_member_with_given_id(connection, member_id: str) -> None:
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT member_id, member_name, member_email, member_status
+        FROM members
+        WHERE member_id = ?
+    """, (member_id,))
+
+    row = cursor.fetchone()
+
+    print(f"Member ID     : {row[0]}")
+    print(f"Member Name   : {row[1]}")
+    print(f"Member Email  : {row[2]}")
+    print(f"Member Status : {row[3]}")
+
 # -=-=- Category? =-=-=-=
 def generate_category_id(sequence) -> str:
     prefix = "CAT"
@@ -597,6 +640,82 @@ def insert_book_and_corresponding_categories_into_database(
 
 
 # ===-=== BOOK FOCUSED ===-===
+def get_book_from_database(connection, book_id: str) -> Book | None:
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT book_id, title, publisher_id, available, published_date
+        FROM books
+        WHERE book_id = ?
+    """, (book_id,))
+
+    row = cursor.fetchone()
+
+    if row is None:
+        return None
+
+    # Publisher
+    publisher = None
+
+    if row[2] is not None:
+        publisher = get_publisher_from_database(
+            connection,
+            row[2]
+        )
+
+    # Authors
+    cursor.execute("""
+        SELECT author_id
+        FROM book_authors
+        WHERE book_id = ?
+    """, (book_id,))
+
+    author_rows = cursor.fetchall()
+
+    authors = []
+
+    for author_row in author_rows:
+        author = get_author_from_database(
+            connection,
+            author_row[0]
+        )
+
+        if author is not None:
+            authors.append(author)
+
+    # Categories
+    cursor.execute("""
+        SELECT category_id
+        FROM book_categories
+        WHERE book_id = ?
+    """, (book_id,))
+
+    category_rows = cursor.fetchall()
+
+    categories = []
+
+    for category_row in category_rows:
+        category = get_category_from_database(
+            connection,
+            category_row[0]
+        )
+
+        if category is not None:
+            categories.append(category)
+
+    # Reconstruct Book
+    book = Book(
+        book_id=row[0],
+        title=row[1],
+        author=authors,
+        publisher=publisher,
+        category=categories,
+        available=bool(row[3]),
+        published_date=date.fromisoformat(row[4])
+    )
+
+    return book
+
 def book_exists(connection, book_id) -> bool:
     cursor = connection.cursor()
 
@@ -724,8 +843,95 @@ def fetch_all_books_from_database(connection) -> list[Book]:
     return books
 
 def update_book_in_database(
-    ) -> None:
-    return
+        connection,
+        book:Book,
+        title:str | None,
+        authors:list[Author] | None,
+        publisher:Publisher | None,
+        categories:list[Category] | None,
+        published_date:date | None
+    ) -> bool:
+    cursor = connection.cursor()
+    book_id = book.book_id
+    if title is not None:
+        #title is in table books
+        cursor.execute("""
+            UPDATE books
+            SET title = ?
+            WHERE book_id = ?
+        """,( 
+            title,
+            book_id
+        ))
+    if authors is not None:
+        cursor.execute("""
+            DELETE FROM book_authors
+            WHERE book_id = ?
+        """,( 
+            book_id,
+        ))
+        for author in authors:
+            cursor.execute("""
+                INSERT INTO book_authors (book_id, author_id)
+                VALUES (?,?)
+            """,( 
+                book_id,
+                author.author_id
+            ))
+        
+    if publisher is not None:
+        cursor.execute("""
+            UPDATE books
+            SET publisher_id = ?
+            WHERE book_id = ?
+        """,( 
+            publisher.publisher_id,
+            book_id
+        ))
+        
+    if categories is not None:
+        cursor.execute("""
+            DELETE FROM book_categories
+            WHERE book_id = ?
+        """,( 
+            book_id,
+        ))
+        for category in categories:
+            cursor.execute("""
+                SELECT category_id
+                FROM categories
+                WHERE category_name = ?
+            """,(
+                category,
+            ))
+            row = cursor.fetchone()
+            category_id = row[0]
+            cursor.execute("""
+                INSERT INTO book_categories (
+                    book_id,
+                    category_id
+                )
+    
+                VALUES (?,?)
+            """,(
+                book_id,
+                category_id
+            ))
+        
+    if published_date is not None:
+        cursor.execute("""
+            UPDATE books
+            SET published_date = ?
+            WHERE book_id = ?
+        """,( 
+            str(published_date),
+            book_id
+        ))
+        
+
+    connection.commit()
+    display_book_with_given_id(connection, book.book_id)
+    return True
 
 def get_books_by_criteria_from_database(
 ) -> list[Book] | None:
@@ -739,6 +945,72 @@ def delete_book_from_database(book_id: str) -> bool:
 
 def check_book_exists_in_database(book_id: str) -> bool:
     return
+
+def display_book_with_given_id(connection, book_id: str) -> None:
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT book_id, title, publisher_id, available, published_date
+        FROM books
+        WHERE book_id = ?
+    """, (book_id,))
+
+    row = cursor.fetchone()
+
+    print(f"Book ID         : {row[0]}")
+    print(f"Title           : {row[1]}")
+
+    # Publisher
+    if row[2] is not None:
+        publisher = get_publisher_from_database(connection, row[2])
+        print(f"Publisher       : {publisher.publisher_name}")
+    else:
+        print("Publisher       : None")
+
+    # Authors
+    cursor.execute("""
+        SELECT author_id
+        FROM book_authors
+        WHERE book_id = ?
+    """, (book_id,))
+
+    author_rows = cursor.fetchall()
+
+    print("Authors         :")
+
+    if author_rows:
+        for author_row in author_rows:
+            author = get_author_from_database(
+                connection,
+                author_row[0]
+            )
+            print(f"  - {author.author_name}")
+    else:
+        print("  - None")
+
+    # Categories
+    cursor.execute("""
+        SELECT category_id
+        FROM book_categories
+        WHERE book_id = ?
+    """, (book_id,))
+
+    category_rows = cursor.fetchall()
+
+    print("Categories      :")
+
+    if category_rows:
+        for category_row in category_rows:
+            category = get_category_from_database(
+                connection,
+                category_row[0]
+            )
+            print(f"  - {category}")
+    else:
+        print("  - None")
+
+    print(f"Available       : {bool(row[3])}")
+    print(f"Published Date  : {row[4]}")
 
 
 # === sql function ===
