@@ -927,8 +927,6 @@ def update_book_in_database(
             str(published_date),
             book_id
         ))
-        
-
     connection.commit()
     display_book_with_given_id(connection, book.book_id)
     return True
