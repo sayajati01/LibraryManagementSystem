@@ -5,35 +5,22 @@ from datetime import date
 #=========== Menu Functions =============
 
 #=-= Statistics Menu Functions =-=
-#calculate total books (all)
-def calculate_total_books(books: list[Book]) -> int:
-    print("~~~~ Function ~~~~")
-    return len(books)
+def display_statistics(connection) -> None:
+    print("""
+-------- LIBRARY STATISTICS --------
+""")
 
-def show_total_books():
-    print("~~~~ Function ~~~~")
-    pass 
-
-def show_total_members():
-    print("~~~~ Function ~~~~")
-    pass
-
-def show_total_publishers():
-    print("~~~~ Function ~~~~")
-    pass
-
-def show_total_authors():
-    print("~~~~ Function ~~~~")
-    pass
-
-def show_currently_borrowed_books():
-    print("~~~~ Function ~~~~")
-    pass
-
-def show_available_books():
-    print("~~~~ Function ~~~~")
-    pass
-
+    print(f"Total Books           : {storage.get_total_books(connection)}")
+    print(f"Available Books       : {storage.get_available_books(connection)}")
+    print(f"Borrowed Books        : {storage.get_borrowed_books(connection)}")
+    print(f"Total Authors         : {storage.get_total_authors(connection)}")
+    print(f"Total Publishers      : {storage.get_total_publishers(connection)}")
+    print(f"Total Members         : {storage.get_total_members(connection)}")
+    print(f"Active Members        : {storage.get_active_members(connection)}")
+    print(f"Inactive Members      : {storage.get_inactive_members(connection)}")
+    print(f"Total Borrowings      : {storage.get_total_borrowings(connection)}")
+    print(f"Active Borrowings     : {storage.get_active_borrowings(connection)}")
+    
 #=-= Publisher Management menu Functions =-=
 def get_publisher(connection,required) :
     view_all_publishers(connection)
@@ -236,16 +223,7 @@ def view_all_authors(connection):
     return
 
 #=-= Member Management Menu Functions =-=
-#get the books borrowed by a member
-def display_member_borrowed_books(connection) -> None:
-    print("~~~~ Member Borrowed Book Function ~~~~")
-    member = get_member(connection, required=False)
-
-    if member is not None:
-        storage.display_member_borrowing(connection, member)
-    return
-
-def get_member(connection,required):
+def get_member(connection,required:bool) -> Member | None:
     member_id = get_id("member",required)
 
     member = storage.get_member_from_database(
@@ -413,43 +391,12 @@ def view_all_members(connection):
         print(f"{member.member_id:<15}| {member.member_name:<15}| {member.member_email:<15}| {member.member_status.value:<15}\n")
     return
 
-#=-= Search Menu Functions =-=
-def search_by_book_id():
-    print("~~~~ Function ~~~~")
-    pass
-
-
-def search_by_title():
-    print("~~~~ Function ~~~~")
-    pass
-
-
-def search_by_author():
-    print("~~~~ Function ~~~~")
-    pass
-
-
-def search_by_category():
-    print("~~~~ Function ~~~~")
-    pass
-
-
-def search_by_publisher():
-    print("~~~~ Function ~~~~")
-    pass
-
-
-def search_by_publication_year():
-    print("~~~~ Function ~~~~")
-    pass
-
-
 def advanced_search():
     print("~~~~ Function ~~~~")
     pass
 
 #=-= Borrowing Feature Menu Functions =-=
-def get_borrowing(connection, required):
+def get_borrowing(connection, required:bool) -> Borrowing | None:
     borrowing_id = get_id("member",required)
 
     borrowing = storage.get_borrowing_from_database(
@@ -491,7 +438,8 @@ def borrow_book(connection) -> bool:
                 borrowing_id=borrowing_id,
                 member_id=member.member_id,
                 book_id=book_to_borrow.book_id,
-                borrow_date=borrow_date
+                borrow_date=borrow_date,
+                return_date=None
             )
             storage.insert_borrowing_into_database(connection, new_borrowing)
             storage.update_book_availability_in_database(connection, book_to_borrow.book_id, False)
@@ -503,7 +451,7 @@ def borrow_book(connection) -> bool:
 def return_book(connection) -> bool:
     print("~~~~ Function ~~~~")
     #get borrowing object from database
-    borrowing = get_borrowing(connection, required=False)
+    borrowing = get_borrowing(connection, False)
     if borrowing is None:
         return
 
@@ -524,9 +472,18 @@ def return_book(connection) -> bool:
     storage.update_borrowing_in_database(connection, borrowing)
     storage.display_borrowing_given_id(connection, borrowing_id=borrowing.borrowing_id)
     return True
-    
+
+#get the books borrowed by a member
+def display_member_borrowed_books(connection) -> None:
+    print("~~~~ Member Borrowed Book Function ~~~~")
+    member = get_member(connection, required=False)
+
+    if member is not None:
+        storage.display_member_borrowing(connection, member)
+    return
+
 #=-= Book Management Menu Functions =-=
-def get_book(connection, required) -> Book | None:
+def get_book(connection, required:bool) -> Book | None:
     book_id = get_id("book",required)
 
     book = storage.get_book_from_database(connection,book_id)
@@ -713,8 +670,3 @@ def view_all_categories(connection):
 
     for category_id, category_name in categories.items():
         print(f"{category_id:<10} : {category_name}")
-
-#get Book object after finding it, None if not found
-def get_book(book_id: str) -> Book | None:
-    print("~~~~ Function ~~~~")
-    return

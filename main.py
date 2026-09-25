@@ -3,40 +3,6 @@ from storage import create_connection,create_tables,insert_category_into_db
 
 
 # =========================
-# STATISTICS
-# =========================
-def statistic_menu(connection):
-    print("""
--------- STATISTICS MENU --------
-1. Total Books
-2. Total Members
-3. Total Publishers
-4. Total Authors
-5. Currently Borrowed Books
-6. Available Books
-0. Back
-""")
-
-    menu_choice = input("Input Menu (number): ").strip()
-
-    if menu_choice == "1":
-        show_total_books(connection)
-    elif menu_choice == "2":
-        show_total_members(connection)
-    elif menu_choice == "3":
-        show_total_publishers(connection)
-    elif menu_choice == "4":
-        show_total_authors(connection)
-    elif menu_choice == "5":
-        show_currently_borrowed_books(connection)
-    elif menu_choice == "6":
-        show_available_books(connection)
-    elif menu_choice == "0":
-        return
-    else:
-        print("INVALID MENU")
-
-# =========================
 # PUBLISHER MANAGEMENT
 # =========================
 def publisher_management_menu(connection):
@@ -136,43 +102,6 @@ def member_management_menu(connection):
     else:
         print("INVALID MENU")
 
-# =========================
-# SEARCH
-# =========================
-def search_menu(connection):
-    print("""
--------- SEARCH MENU --------
-1. Search by Book ID
-2. Search by Title
-3. Search by Author
-4. Search by Category
-5. Search by Publisher
-6. Search by Publication Year
-7. Advanced Search
-0. Back
-""")
-
-    menu_choice = input("Input Menu (number): ").strip()
-
-    if menu_choice == "1":
-        search_by_book_id(connection)
-    elif menu_choice == "2":
-        search_by_title(connection)
-    elif menu_choice == "3":
-        search_by_author(connection)
-    elif menu_choice == "4":
-        search_by_category(connection)
-    elif menu_choice == "5":
-        search_by_publisher(connection)
-    elif menu_choice == "6":
-        search_by_publication_year(connection)
-    elif menu_choice == "7":
-        advanced_search(connection)
-    elif menu_choice == "0":
-        return
-    else:
-        print("INVALID MENU")
-
 
 # =========================
 # BORROWING
@@ -193,7 +122,7 @@ def borrowing_feature_menu(connection):
     elif menu_choice == "2":
         return_book(connection)
     elif menu_choice == "3":
-        get_member_borrowed_books(connection)
+        display_member_borrowed_books(connection)
     elif menu_choice == "0":
         return
     else:
@@ -268,13 +197,13 @@ def main():
         elif menu_choice == "3":
             borrowing_feature_menu(connection)
         elif menu_choice == "4":
-            search_menu(connection)
+            print("Currently Unavailable.\n")
         elif menu_choice == "5":
             publisher_management_menu(connection)
         elif menu_choice == "6":
             author_management_menu(connection)
         elif menu_choice == "7":
-            statistic_menu(connection)
+            display_statistics(connection)
         elif menu_choice == "0":
             running = False
         else:

@@ -40,7 +40,7 @@ def create_tables_members(connection) -> None:
 def create_tables_books(connection) -> None:
     cursor = connection.cursor()
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS books_new (
+        CREATE TABLE IF NOT EXISTS books (
             book_id TEXT PRIMARY KEY,
             title TEXT NOT NULL,
             publisher_id TEXT,
@@ -125,9 +125,6 @@ def create_tables(connection):
     create_tables_borrowings(connection)
 
     connection.commit()
-
-def get_borrowed_books_of_a_member_from_database(member_id:str) -> list[Book]:
-    return
 
 # ===-=== ===-=== ===-===
 #
@@ -378,8 +375,6 @@ def display_author_with_given_id(connection, author_id: str) -> None:
 
     print(f"Author ID   : {row[0]}")
     print(f"Author Name : {row[1]}")
-    
-
 
 # ===-===  ===-=== ===-===
 # 
@@ -711,9 +706,9 @@ def get_book_from_database(connection, book_id: str) -> Book | None:
     book = Book(
         book_id=row[0],
         title=row[1],
-        author=authors,
+        authors=authors,
         publisher=publisher,
-        category=categories,
+        categories=categories,
         available=bool(row[3]),
         published_date=date.fromisoformat(row[4])
     )
@@ -849,11 +844,11 @@ def fetch_all_books_from_database(connection) -> list[Book]:
 def update_book_in_database(
         connection,
         book:Book,
-        title:str | None,
-        authors:list[Author] | None,
-        publisher:Publisher | None,
-        categories:list[Category] | None,
-        published_date:date | None
+        title:str|None = None,
+        authors:list[Author]|None = None,
+        publisher:Publisher|None = None,
+        categories:list[Category]|None = None,
+        published_date:date|None = None
     ) -> bool:
     cursor = connection.cursor()
     book_id = book.book_id
@@ -935,10 +930,6 @@ def update_book_in_database(
     display_book_with_given_id(connection, book.book_id)
     return True
 
-def get_books_by_criteria_from_database(
-) -> list[Book] | None:
-    return
-
 def update_book_availability_in_database(connection, book_id: str, available: bool) -> bool:
     cursor = connection.cursor()
 
@@ -971,7 +962,6 @@ def delete_book_from_database(connection, book_id: str) -> bool:
         WHERE book_id = ?
     """,(book_id))
     connection.commit()
-    
 
 def display_book_with_given_id(connection, book_id: str) -> None:
     cursor = connection.cursor()
@@ -1084,7 +1074,6 @@ def insert_borrowing_into_database(
     ))
 
     connection.commit()
-
     return True
 
 def get_borrowing_from_database(
@@ -1132,6 +1121,8 @@ def update_borrowing_in_database(
         borrowing.return_date,
         borrowing.borrowing_id
     ))
+    connection.commit()
+    return True
 
 def display_member_borrowing(connection, member:Member) -> None:
     cursor = connection.cursor()
@@ -1159,7 +1150,143 @@ def display_member_borrowing(connection, member:Member) -> None:
                 f"{book.title:<40} | "
                 f"{row[1]:<12} | "
                 f"{row[2] if row[2] is not None else '-':<12}"
-            )    
+            )
+
+#Statistics
+def get_total_books(connection) -> int:
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM books
+    """)
+
+    row = cursor.fetchone()
+
+    return row[0]
+
+
+def get_available_books(connection) -> int:
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM books
+        WHERE available = 1
+    """)
+
+    row = cursor.fetchone()
+
+    return row[0]
+
+
+def get_borrowed_books(connection) -> int:
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM books
+        WHERE available = 0
+    """)
+
+    row = cursor.fetchone()
+
+    return row[0]
+
+
+def get_total_authors(connection) -> int:
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM authors
+    """)
+
+    row = cursor.fetchone()
+
+    return row[0]
+
+
+def get_total_publishers(connection) -> int:
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM publishers
+    """)
+
+    row = cursor.fetchone()
+
+    return row[0]
+
+
+def get_total_members(connection) -> int:
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM members
+    """)
+
+    row = cursor.fetchone()
+
+    return row[0]
+
+
+def get_active_members(connection) -> int:
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM members
+        WHERE member_status = 'Active'
+    """)
+
+    row = cursor.fetchone()
+
+    return row[0]
+
+
+def get_inactive_members(connection) -> int:
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM members
+        WHERE member_status = 'Inactive'
+    """)
+
+    row = cursor.fetchone()
+
+    return row[0]
+
+
+def get_total_borrowings(connection) -> int:
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM borrowings
+    """)
+
+    row = cursor.fetchone()
+
+    return row[0]
+
+
+def get_active_borrowings(connection) -> int:
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM borrowings
+        WHERE return_date IS NULL
+    """)
+
+    row = cursor.fetchone()
+
+    return row[0]
+
 # === sql function ===
 def create_connection():
     connection = sqlite3.connect("library.db")

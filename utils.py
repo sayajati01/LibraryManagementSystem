@@ -60,9 +60,6 @@ def get_id(object_name: str, required=True) -> str:
             return object_id
         
         print("INVALID ID")
-        
-    
-
 
 def get_name(object_name: str) -> str:
     while True:
@@ -71,7 +68,6 @@ def get_name(object_name: str) -> str:
             return name
 
         print(f"Invalid {object_name} name.")  
-
 
 def get_email() -> str:
     while True:
@@ -82,7 +78,6 @@ def get_email() -> str:
 
         print("INVALID EMAIL")
 
-
 def get_title() -> str:
     while True:
         title = input("Book title: ").strip()
@@ -91,7 +86,6 @@ def get_title() -> str:
             return title
 
         print("INVALID TITLE")
-
 
 def get_category_name() -> Category:
     while True:
@@ -128,7 +122,7 @@ def get_published_date() -> date:
         return datetime.strptime(date_input, "%Y-%m-%d").date()
     
 def get_current_date() -> date:
-    return datetime.now.date()
+    return datetime.now().date()
 
 
 # =========================================================
